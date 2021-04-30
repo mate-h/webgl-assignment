@@ -60,39 +60,73 @@ function getShader(gl, id) {
   return shader;
 }
 
+/**
+ * Loads a shader through the network asynchronously
+ */
+function getShaderAsync(gl, path, type = gl.FRAGMENT_SHADER) {
+  return fetch(path)
+    .then((r) => r.text())
+    .then((source) => {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        alert(gl.getShaderInfoLog(shader));
+        return null;
+      }
+
+      return shader;
+    });
+}
+
 function initShaders() {
-  var fragmentShader = getShader(gl, "fragmentShader");
-  var vertexShader = getShader(gl, "vertexShader");
+  // var fragmentShader = getShader(gl, "fragmentShader");
+  // var vertexShader = getShader(gl, "vertexShader");
 
-  shaderProgram = gl.createProgram();
-  gl.attachShader(shaderProgram, vertexShader);
-  gl.attachShader(shaderProgram, fragmentShader);
-  gl.linkProgram(shaderProgram);
-
-  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-    alert("Could not initialise shaders");
-  }
-
-  gl.useProgram(shaderProgram);
-
-  shaderProgram.vertexPositionAttribute = gl.getAttribLocation(
-    shaderProgram,
-    "aVertexPosition"
+  const loadFragment = getShaderAsync(
+    gl,
+    "./shaders/main/fragment.glsl",
+    gl.FRAGMENT_SHADER
   );
-  gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
-  shaderProgram.vertexFrontColorAttribute = gl.getAttribLocation(
-    shaderProgram,
-    "aFrontColor"
+  const loadVertex = getShaderAsync(
+    gl,
+    "./shaders/main/vertex.glsl",
+    gl.VERTEX_SHADER
   );
-  gl.enableVertexAttribArray(shaderProgram.vertexFrontColorAttribute);
+  return Promise.all([loadFragment, loadVertex]).then(
+    ([fragmentShader, vertexShader]) => {
+      shaderProgram = gl.createProgram();
+      gl.attachShader(shaderProgram, vertexShader);
+      gl.attachShader(shaderProgram, fragmentShader);
+      gl.linkProgram(shaderProgram);
 
-  shaderProgram.pMatrixUniform = gl.getUniformLocation(
-    shaderProgram,
-    "uPMatrix"
-  );
-  shaderProgram.mvMatrixUniform = gl.getUniformLocation(
-    shaderProgram,
-    "uMVMatrix"
+      if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+        alert("Could not initialise shaders");
+      }
+
+      gl.useProgram(shaderProgram);
+
+      shaderProgram.vertexPositionAttribute = gl.getAttribLocation(
+        shaderProgram,
+        "aVertexPosition"
+      );
+      gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+      shaderProgram.vertexFrontColorAttribute = gl.getAttribLocation(
+        shaderProgram,
+        "aFrontColor"
+      );
+      gl.enableVertexAttribArray(shaderProgram.vertexFrontColorAttribute);
+
+      shaderProgram.pMatrixUniform = gl.getUniformLocation(
+        shaderProgram,
+        "uPMatrix"
+      );
+      shaderProgram.mvMatrixUniform = gl.getUniformLocation(
+        shaderProgram,
+        "uMVMatrix"
+      );
+    }
   );
 }
 
@@ -226,13 +260,14 @@ function tick() {
 function webGLStart() {
   var canvas = document.getElementById("ICG-canvas");
   initGL(canvas);
-  initShaders();
-  loadTeapot();
+  initShaders().then(() => {
+    loadTeapot();
 
-  gl.clearColor(0.0, 0.2, 0.2, 1.0);
-  gl.enable(gl.DEPTH_TEST);
+    gl.clearColor(0.0, 0.2, 0.2, 1.0);
+    gl.enable(gl.DEPTH_TEST);
 
-  tick();
+    tick();
+  });
 }
 
 document.body.onload = () => webGLStart();
