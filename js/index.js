@@ -1,5 +1,5 @@
 // imports
-import * as dat from '../node_modules/dat.gui/build/dat.gui.module.js';
+import * as dat from '../build/dat.gui.module.js';
 
 // common variables
 var gl;
