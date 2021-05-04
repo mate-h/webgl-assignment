@@ -13,7 +13,7 @@ var teapotAngle = 180;
 var lastTime = 0;
 
 //parameters
-const currentShader = "flat";
+const currentShader = "phong";
 
 function initGL(canvas) {
   try {
