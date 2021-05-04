@@ -12,9 +12,12 @@ var teapotVertexFrontColorBuffer;
 var teapotAngle = 180;
 var lastTime = 0;
 
+//parameters
+const currentShader = "flat";
+
 function initGL(canvas) {
   try {
-    gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    gl = canvas.getContext("webgl");
     gl.viewportWidth = canvas.width;
     gl.viewportHeight = canvas.height;
   } catch (e) {}
@@ -86,12 +89,12 @@ function initShaders() {
 
   const loadFragment = getShaderAsync(
     gl,
-    "./shaders/main/fragment.glsl",
+    `./shaders/${currentShader}/fragment.glsl`,
     gl.FRAGMENT_SHADER
   );
   const loadVertex = getShaderAsync(
     gl,
-    "./shaders/main/vertex.glsl",
+    `./shaders/${currentShader}/vertex.glsl`,
     gl.VERTEX_SHADER
   );
   return Promise.all([loadFragment, loadVertex]).then(
@@ -111,6 +114,10 @@ function initShaders() {
         shaderProgram,
         "aVertexPosition"
       );
+
+      shaderProgram.vertexNormalAttribute = gl.getAttribLocation(shaderProgram, "aVertexNormal");
+      gl.enableVertexAttribArray(shaderProgram.vertexNormalAttribute);
+
       gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
       shaderProgram.vertexFrontColorAttribute = gl.getAttribLocation(
         shaderProgram,
@@ -126,6 +133,10 @@ function initShaders() {
         shaderProgram,
         "uMVMatrix"
       );
+      shaderProgram.nMatrixUniform = gl.getUniformLocation(
+        shaderProgram,
+        "uNMatrix"
+      );
     }
   );
 }
@@ -133,6 +144,11 @@ function initShaders() {
 function setMatrixUniforms() {
   gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
   gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
+
+  var normalMatrix = mat3.create();
+  mat4.toInverseMat3(mvMatrix, normalMatrix);
+  mat3.transpose(normalMatrix);
+  gl.uniformMatrix3fv(shaderProgram.nMatrixUniform, false, normalMatrix);
 }
 
 function degToRad(degrees) {
@@ -226,6 +242,9 @@ function drawScene() {
     0,
     0
   );
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexNormalBuffer);
+  gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute, teapotVertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
   // Setup teapot front color data
   gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexFrontColorBuffer);
