@@ -32,42 +32,6 @@ function initGL(canvas) {
   }
 }
 
-function getShader(gl, id) {
-  var shaderScript = document.getElementById(id);
-  if (!shaderScript) {
-    return null;
-  }
-
-  var shaderSource = "";
-  var k = shaderScript.firstChild;
-  while (k) {
-    if (k.nodeType == 3) {
-      shaderSource += k.textContent;
-    }
-
-    k = k.nextSibling;
-  }
-
-  var shader;
-  if (shaderScript.type == "fragment") {
-    shader = gl.createShader(gl.FRAGMENT_SHADER);
-  } else if (shaderScript.type == "vertex") {
-    shader = gl.createShader(gl.VERTEX_SHADER);
-  } else {
-    return null;
-  }
-
-  gl.shaderSource(shader, shaderSource);
-  gl.compileShader(shader);
-
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    alert(gl.getShaderInfoLog(shader));
-    return null;
-  }
-
-  return shader;
-}
-
 /**
  * Loads a shader through the network asynchronously
  */
