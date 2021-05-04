@@ -15,7 +15,15 @@ IMPORTANT NOTICE:
 2. When doing flat shading, if need to use `dFdx`, have to first add `#extension GL_OES_standard_derivatives : enable` into fragment shader AND also in `initGL`, add the below code
 
 ```js
-  if (!gl.getExtension('OES_standard_derivatives')){
-    throw 'Extention not supported';
-  }
+if (!gl.getExtension('OES_standard_derivatives')){
+  throw 'Extention not supported';
+}
 ```
+
+# Solutions
+
+Flat shading  
+https://stackoverflow.com/questions/40101023/flat-shading-in-webgl
+
+Phong reflection model  
+https://github.com/tparisi/webgl-lessons/tree/master/lesson14

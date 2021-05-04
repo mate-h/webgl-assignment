@@ -25,6 +25,10 @@ function initGL(canvas) {
   if (!gl) {
     alert("Could not initialise WebGL, sorry :-(");
   }
+  
+  if (!gl.getExtension('OES_standard_derivatives')){
+    throw 'Extention not supported';
+  }
 }
 
 function getShader(gl, id) {

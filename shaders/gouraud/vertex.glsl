@@ -24,5 +24,5 @@ void main(void) {
   float ambientLightIntensity = 0.2;
   vec4 ambientLightColor = vec4(1.0,1.0,1.0,1.0) * ambientLightIntensity;
   vec4 lightWeighting = ambientLightColor + diffuseLightColor * diffuseLightWeight;
-  fragcolor = vec4(aFrontColor.rgb, 1.0);
+  fragcolor = vec4(aFrontColor.rgb * lightWeighting.rgb, 1.0);
 }
