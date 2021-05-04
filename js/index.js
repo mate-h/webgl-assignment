@@ -8,17 +8,13 @@ var pMatrix = mat4.create();
 var teapotVertexPositionBuffer;
 var teapotVertexNormalBuffer;
 var teapotVertexFrontColorBuffer;
-var teapotVertexTextureCoordBuffer;
 
 var teapotAngle = 180;
 var lastTime = 0;
 
-// parameters
-const currentShader = 'flat';
-
 function initGL(canvas) {
   try {
-    gl = canvas.getContext("webgl2");
+    gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
     gl.viewportWidth = canvas.width;
     gl.viewportHeight = canvas.height;
   } catch (e) {}
@@ -76,7 +72,7 @@ function getShaderAsync(gl, path, type = gl.FRAGMENT_SHADER) {
       gl.compileShader(shader);
 
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.error(gl.getShaderInfoLog(shader));
+        alert(gl.getShaderInfoLog(shader));
         return null;
       }
 
@@ -90,12 +86,12 @@ function initShaders() {
 
   const loadFragment = getShaderAsync(
     gl,
-    `./shaders/${currentShader}/fragment.glsl`,
+    "./shaders/main/fragment.glsl",
     gl.FRAGMENT_SHADER
   );
   const loadVertex = getShaderAsync(
     gl,
-    `./shaders/${currentShader}/vertex.glsl`,
+    "./shaders/main/vertex.glsl",
     gl.VERTEX_SHADER
   );
   return Promise.all([loadFragment, loadVertex]).then(
@@ -116,11 +112,6 @@ function initShaders() {
         "aVertexPosition"
       );
       gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
-      shaderProgram.vertexNormalAttribute = gl.getAttribLocation(
-        shaderProgram,
-        "aVertexNormal"
-      );
-      gl.enableVertexAttribArray(shaderProgram.vertexNormalAttribute);
       shaderProgram.vertexFrontColorAttribute = gl.getAttribLocation(
         shaderProgram,
         "aFrontColor"
@@ -135,11 +126,6 @@ function initShaders() {
         shaderProgram,
         "uMVMatrix"
       );
-      shaderProgram.nmMatrixUniform = gl.getUniformLocation(
-        shaderProgram,
-        "uNMMatrix"
-      );
-      return shaderProgram;
     }
   );
 }
@@ -147,7 +133,6 @@ function initShaders() {
 function setMatrixUniforms() {
   gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
   gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
-  gl.uniformMatrix4fv(shaderProgram.nmMatrixUniform, false, nmMatrix);
 }
 
 function degToRad(degrees) {
@@ -155,23 +140,36 @@ function degToRad(degrees) {
 }
 
 function handleLoadedTeapot(teapotData) {
+  teapotVertexPositionBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexPositionBuffer);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array(teapotData.vertexPositions),
+    gl.STATIC_DRAW
+  );
+  teapotVertexPositionBuffer.itemSize = 3;
+  teapotVertexPositionBuffer.numItems = teapotData.vertexPositions.length / 3;
+
   teapotVertexNormalBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexNormalBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexNormals), gl.STATIC_DRAW);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array(teapotData.vertexNormals),
+    gl.STATIC_DRAW
+  );
   teapotVertexNormalBuffer.itemSize = 3;
   teapotVertexNormalBuffer.numItems = teapotData.vertexNormals.length / 3;
 
-  teapotVertexTextureCoordBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexTextureCoordBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexTextureCoords), gl.STATIC_DRAW);
-  teapotVertexTextureCoordBuffer.itemSize = 2;
-  teapotVertexTextureCoordBuffer.numItems = teapotData.vertexTextureCoords.length / 2;
-
-  teapotVertexPositionBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexPositionBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexPositions), gl.STATIC_DRAW);
-  teapotVertexPositionBuffer.itemSize = 3;
-  teapotVertexPositionBuffer.numItems = teapotData.vertexPositions.length / 3;
+  teapotVertexFrontColorBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexFrontColorBuffer);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array(teapotData.vertexFrontcolors),
+    gl.STATIC_DRAW
+  );
+  teapotVertexFrontColorBuffer.itemSize = 3;
+  teapotVertexFrontColorBuffer.numItems =
+    teapotData.vertexFrontcolors.length / 3;
 }
 
 function loadTeapot() {
@@ -223,16 +221,6 @@ function drawScene() {
   gl.vertexAttribPointer(
     shaderProgram.vertexPositionAttribute,
     teapotVertexPositionBuffer.itemSize,
-    gl.FLOAT,
-    false,
-    0,
-    0
-  );
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexNormalBuffer);
-  gl.vertexAttribPointer(
-    shaderProgram.teapotVertexNormalBuffer,
-    teapotVertexNormalBuffer.itemSize,
     gl.FLOAT,
     false,
     0,
