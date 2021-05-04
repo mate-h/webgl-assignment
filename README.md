@@ -20,6 +20,14 @@ if (!gl.getExtension('OES_standard_derivatives')){
 }
 ```
 
+## Cloning this repo
+```
+git clone https://github.com/mate-h/webgl-assignment
+cd webgl-assignment
+npm i
+npm run dev
+```
+
 # Solutions
 
 Flat shading  
