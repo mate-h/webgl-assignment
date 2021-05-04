@@ -3,7 +3,7 @@ import * as dat from "dat.gui";
 import { mat4, mat3 } from "gl-matrix";
 
 // common variables
-var gl;
+export let gl;
 var shaderProgram;
 
 var mvMatrix = mat4.create();
