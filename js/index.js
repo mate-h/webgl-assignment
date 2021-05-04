@@ -1,3 +1,6 @@
+// imports
+import * as dat from '../node_modules/dat.gui/build/dat.gui.module.js';
+
 // common variables
 var gl;
 var shaderProgram;
@@ -13,7 +16,14 @@ var teapotAngle = 180;
 var lastTime = 0;
 
 //parameters
-const currentShader = "phong";
+const gui = new dat.GUI({name: 'Parameters'});
+const parameters = {
+  currentShader: "phong"
+}
+gui.add(parameters, "currentShader").options("flat", "gouraud", "phong", "main").name("Shader").onChange((a) => {
+  initShaders();
+});
+// const currentShader = "phong";
 
 function initGL(canvas) {
   try {
@@ -93,12 +103,12 @@ function initShaders() {
 
   const loadFragment = getShaderAsync(
     gl,
-    `./shaders/${currentShader}/fragment.glsl`,
+    `./shaders/${parameters.currentShader}/fragment.glsl`,
     gl.FRAGMENT_SHADER
   );
   const loadVertex = getShaderAsync(
     gl,
-    `./shaders/${currentShader}/vertex.glsl`,
+    `./shaders/${parameters.currentShader}/vertex.glsl`,
     gl.VERTEX_SHADER
   );
   return Promise.all([loadFragment, loadVertex]).then(

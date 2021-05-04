@@ -19,5 +19,8 @@
   "homepage": "https://github.com/mate-h/webgl-assignment#readme",
   "devDependencies": {
     "serve": "^11.3.2"
+  },
+  "dependencies": {
+    "dat.gui": "^0.7.7"
   }
 }
