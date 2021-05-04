@@ -1,12 +1,12 @@
 // imports
 import * as dat from "dat.gui";
-import { loadModel, initShaders } from ".";
+import { loadScene, initShaders } from ".";
 
 //parameters
 const gui = new dat.GUI({ name: "Parameters" });
 export const parameters = {
   currentShader: "phong",
-  currentModel: "Teapot",
+  wireframe: false,
   camera: {
     position: [0, 0, -40],
     fov: 45,
@@ -14,6 +14,7 @@ export const parameters = {
   scene: [
     {
       type: "mesh",
+      model: "Teapot",
       transform: {
         translate: [0,0,0],
         scale: [0,0,0],
@@ -28,6 +29,7 @@ export const parameters = {
   turnSpeed: 0.03,
   turnAxis: "y"
 };
+
 gui
   .add(parameters, "currentShader")
   .options("flat", "gouraud", "phong", "main")
@@ -35,6 +37,7 @@ gui
   .onChange((a) => {
     initShaders();
   });
+gui.add(parameters, "wireframe").name("Wireframe");
 const modelOptions = [
   "Car_road",
   "Church_s",
@@ -50,13 +53,6 @@ const modelOptions = [
   "Teapot",
   "Tomcat",
 ];
-gui
-  .add(parameters, "currentModel")
-  .options(modelOptions)
-  .name("Model")
-  .onChange((o) => {
-    loadModel();
-  });
 const camGui = gui.addFolder("Camera");
 camGui.add(parameters.camera.position, "0", -10, 10, 0.01).name("x");
 camGui.add(parameters.camera.position, "1", -10, 10, 0.01).name("y");
@@ -70,6 +66,13 @@ function sceneParams() {
     const objFolder = sceneGui.addFolder(`Object ${i + 1}`);
     objFolder.open();
     objFolder.add(obj, "type").name("Type").options("mesh", "light");
+    objFolder
+      .add(obj, "model")
+      .options(modelOptions)
+      .name("Model")
+      .onChange((o) => {
+        loadScene();
+      });
     const transformFolder = objFolder.addFolder('Transform');
     transformFolder.open();
     Object.entries({

@@ -159,12 +159,11 @@ function handleLoadedModel(teapotData) {
     teapotData.vertexFrontcolors.length / 3;
 }
 
-export function loadModel() {
-  fetch(`./model/${parameters.currentModel}.json`)
-    .then((r) => r.json())
-    .then((r) => {
-      handleLoadedModel(r);
-    });
+export function loadScene() {
+  Promise.all(parameters.scene.map(obj => fetch(`./model/${obj.model}.json`)
+  .then((r) => r.json()))).then(vals => {
+    handleLoadedModel(vals[0]);
+  })
 }
 
 /*
@@ -242,7 +241,15 @@ function drawScene() {
     0
   );
 
-  gl.drawArrays(gl.TRIANGLES, 0, modelVertexPositionBuffer.numItems);
+
+  if (parameters.wireframe) {
+    gl.drawArrays(gl.LINE_STRIP, 0, modelVertexPositionBuffer.numItems);
+  }
+  else {
+    gl.drawArrays(gl.TRIANGLES, 0, modelVertexPositionBuffer.numItems);
+  }
+  
+  gl.flush();
 }
 
 function animate() {
@@ -265,7 +272,7 @@ function webGLStart() {
   var canvas = document.getElementById("ICG-canvas");
   initGL(canvas);
   initShaders().then(() => {
-    loadModel();
+    loadScene();
 
     gl.clearColor(0.0, 0.2, 0.2, 1.0);
     gl.enable(gl.DEPTH_TEST);
