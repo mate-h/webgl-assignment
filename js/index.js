@@ -1,6 +1,6 @@
 // imports
-import * as dat from "../build/dat.gui.module.js";
-import { mat4, mat3 } from "../build/gl-matrix/index.js";
+import * as dat from "dat.gui";
+import { mat4, mat3 } from "gl-matrix";
 
 // common variables
 var gl;
@@ -25,6 +25,17 @@ const parameters = {
     position: [0, 0, -40],
     fov: 45,
   },
+  scene: [
+    {
+      type: "mesh",
+      transform: {
+        translate: [0,0,0],
+        scale: [0,0,0],
+        rotate: [0,0,0],
+        shear: [0,0,0]
+      }
+    }
+  ],
   turnSpeed: 0.03,
   turnAxis: "y"
 };
