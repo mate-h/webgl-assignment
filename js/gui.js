@@ -24,7 +24,18 @@ export const parameters = {
     }
   ],
   addObject: () => {
-    console.log('add object');
+    parameters.scene.push({
+      type: "mesh",
+      model: "Teapot",
+      transform: {
+        translate: [0,0,0],
+        scale: [0,0,0],
+        rotate: [0,0,0],
+        shear: [0,0,0]
+      }
+    });
+    const i = parameters.scene.length - 1;
+    addParam(parameters.scene[i], i);
   },
   turnSpeed: 0.03,
   turnAxis: "y"
@@ -61,35 +72,36 @@ camGui.add(parameters.camera, "fov", 1, 179, 0.001).name("FOV");
 
 const sceneGui = gui.addFolder("Scene");
 sceneGui.open();
-function sceneParams() {
-  parameters.scene.forEach((obj, i) => {
-    const objFolder = sceneGui.addFolder(`Object ${i + 1}`);
-    objFolder.open();
-    objFolder.add(obj, "type").name("Type").options("mesh", "light");
-    objFolder
-      .add(obj, "model")
-      .options(modelOptions)
-      .name("Model")
-      .onChange((o) => {
-        loadScene();
-      });
-    const transformFolder = objFolder.addFolder('Transform');
-    transformFolder.open();
-    Object.entries({
-      translate: "Translate",
-      rotate: "Rotate",
-      scale: "Scale",
-      shear: "Shear",
-    }).forEach(([k,v]) => {
-      const folder = transformFolder.addFolder(v);
-      if (k === 'translate') folder.open();
-      folder.add(obj.transform[k], "0").name("x");
-      folder.add(obj.transform[k], "1").name("y");
-      folder.add(obj.transform[k], "2").name("z");
-    })
+parameters.scene.forEach((obj, i) => {
+  addParam(obj, i);
+})
+
+function addParam(obj, i) {
+  const objFolder = sceneGui.addFolder(`Object ${i + 1}`);
+  objFolder.open();
+  objFolder.add(obj, "type").name("Type").options("mesh", "light");
+  objFolder
+    .add(obj, "model")
+    .options(modelOptions)
+    .name("Model")
+    .onChange((o) => {
+      loadScene();
+    });
+  const transformFolder = objFolder.addFolder('Transform');
+  transformFolder.open();
+  Object.entries({
+    translate: "Translate",
+    rotate: "Rotate",
+    scale: "Scale",
+    shear: "Shear",
+  }).forEach(([k,v]) => {
+    const folder = transformFolder.addFolder(v);
+    if (k === 'translate') folder.open();
+    folder.add(obj.transform[k], "0").name("x");
+    folder.add(obj.transform[k], "1").name("y");
+    folder.add(obj.transform[k], "2").name("z");
   })
 }
-sceneParams();
 
 gui
   .add(parameters, "turnAxis")
