@@ -1,6 +1,6 @@
 // imports
-import * as dat from "dat.gui";
 import { mat4, mat3 } from "gl-matrix";
+import { parameters } from "./gui";
 
 // common variables
 export let gl;
@@ -15,73 +15,6 @@ var modelVertexFrontColorBuffer;
 
 var currentAngle = 180;
 var lastTime = 0;
-
-//parameters
-const gui = new dat.GUI({ name: "Parameters" });
-const parameters = {
-  currentShader: "phong",
-  currentModel: "Teapot",
-  camera: {
-    position: [0, 0, -40],
-    fov: 45,
-  },
-  scene: [
-    {
-      type: "mesh",
-      transform: {
-        translate: [0,0,0],
-        scale: [0,0,0],
-        rotate: [0,0,0],
-        shear: [0,0,0]
-      }
-    }
-  ],
-  turnSpeed: 0.03,
-  turnAxis: "y"
-};
-gui
-  .add(parameters, "currentShader")
-  .options("flat", "gouraud", "phong", "main")
-  .name("Shader")
-  .onChange((a) => {
-    initShaders();
-  });
-const modelOptions = [
-  "Car_road",
-  "Church_s",
-  "Csie",
-  "Easter",
-  "Fighter",
-  "Kangaroo",
-  "Longteap",
-  "Mercedes",
-  "Mig27",
-  "Patchair",
-  "Plant",
-  "Teapot",
-  "Tomcat",
-];
-gui
-  .add(parameters, "currentModel")
-  .options(modelOptions)
-  .name("Model")
-  .onChange((o) => {
-    loadModel();
-  });
-const camGui = gui.addFolder("Camera");
-camGui.add(parameters.camera.position, "0", -10, 10, 0.01).name("x");
-camGui.add(parameters.camera.position, "1", -10, 10, 0.01).name("y");
-camGui.add(parameters.camera.position, "2", -40, 0, 0.01).name("z");
-camGui.add(parameters.camera, "fov", 1, 179, 0.01).name("FOV");
-gui
-  .add(parameters, "turnAxis")
-  .options("x", "y", "z")
-  .name("Turn axis")
-  .onChange(() => {
-    currentAngle = 0;
-  });
-gui.add(parameters, "turnSpeed", 0, 0.2, 0.001).name("Turn speed");
-// const currentShader = "phong";
 
 function initGL(canvas) {
   try {
@@ -155,7 +88,7 @@ function getShaderAsync(gl, path, type = gl.FRAGMENT_SHADER) {
     });
 }
 
-function initShaders() {
+export function initShaders() {
   // var fragmentShader = getShader(gl, "fragmentShader");
   // var vertexShader = getShader(gl, "vertexShader");
 
@@ -262,7 +195,7 @@ function handleLoadedModel(teapotData) {
     teapotData.vertexFrontcolors.length / 3;
 }
 
-function loadModel() {
+export function loadModel() {
   fetch(`./model/${parameters.currentModel}.json`)
     .then((r) => r.json())
     .then((r) => {
@@ -290,7 +223,7 @@ function drawScene() {
   // Setup Projection Matrix
   mat4.perspective(
     pMatrix,
-    parameters.camera.fov,
+    degToRad(parameters.camera.fov),
     gl.viewportWidth / gl.viewportHeight,
     0.1,
     100.0
@@ -304,7 +237,12 @@ function drawScene() {
     y: [0, 1, 0],
     z: [0, 0, 1],
   };
-  mat4.rotate(mvMatrix, mvMatrix, degToRad(currentAngle), lookup[parameters.turnAxis]);
+  mat4.rotate(
+    mvMatrix,
+    mvMatrix,
+    degToRad(currentAngle),
+    lookup[parameters.turnAxis]
+  );
 
   setMatrixUniforms();
 
