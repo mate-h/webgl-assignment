@@ -1,5 +1,6 @@
 // imports
-import * as dat from '../build/dat.gui.module.js';
+import * as dat from "../build/dat.gui.module.js";
+import { mat4, mat3 } from "../build/gl-matrix/index.js";
 
 // common variables
 var gl;
@@ -16,20 +17,24 @@ var currentAngle = 180;
 var lastTime = 0;
 
 //parameters
-const gui = new dat.GUI({name: 'Parameters'});
+const gui = new dat.GUI({ name: "Parameters" });
 const parameters = {
   currentShader: "phong",
   currentModel: "Teapot",
   camera: {
     position: [0, 0, -40],
-    fov: 45
+    fov: 45,
   },
   turnSpeed: 0.03,
   turnAxis: "y"
-}
-gui.add(parameters, "currentShader").options("flat", "gouraud", "phong", "main").name("Shader").onChange((a) => {
-  initShaders();
-});
+};
+gui
+  .add(parameters, "currentShader")
+  .options("flat", "gouraud", "phong", "main")
+  .name("Shader")
+  .onChange((a) => {
+    initShaders();
+  });
 const modelOptions = [
   "Car_road",
   "Church_s",
@@ -43,19 +48,27 @@ const modelOptions = [
   "Patchair",
   "Plant",
   "Teapot",
-  "Tomcat"
-]
-gui.add(parameters, "currentModel").options(modelOptions).name("Model").onChange(o => {
-  loadModel();
-})
-const camGui = gui.addFolder("Camera")
+  "Tomcat",
+];
+gui
+  .add(parameters, "currentModel")
+  .options(modelOptions)
+  .name("Model")
+  .onChange((o) => {
+    loadModel();
+  });
+const camGui = gui.addFolder("Camera");
 camGui.add(parameters.camera.position, "0", -10, 10, 0.01).name("x");
 camGui.add(parameters.camera.position, "1", -10, 10, 0.01).name("y");
 camGui.add(parameters.camera.position, "2", -40, 0, 0.01).name("z");
 camGui.add(parameters.camera, "fov", 1, 179, 0.01).name("FOV");
-gui.add(parameters, "turnAxis").options("x", "y", "z").name("Turn axis").onChange(() => {
-  currentAngle = 0;
-});
+gui
+  .add(parameters, "turnAxis")
+  .options("x", "y", "z")
+  .name("Turn axis")
+  .onChange(() => {
+    currentAngle = 0;
+  });
 gui.add(parameters, "turnSpeed", 0, 0.2, 0.001).name("Turn speed");
 // const currentShader = "phong";
 
@@ -69,9 +82,9 @@ function initGL(canvas) {
   if (!gl) {
     alert("Could not initialise WebGL, sorry :-(");
   }
-  
-  if (!gl.getExtension('OES_standard_derivatives')){
-    throw 'Extention not supported';
+
+  if (!gl.getExtension("OES_standard_derivatives")) {
+    throw "Extention not supported";
   }
 }
 
@@ -163,7 +176,10 @@ function initShaders() {
         "aVertexPosition"
       );
 
-      shaderProgram.vertexNormalAttribute = gl.getAttribLocation(shaderProgram, "aVertexNormal");
+      shaderProgram.vertexNormalAttribute = gl.getAttribLocation(
+        shaderProgram,
+        "aVertexNormal"
+      );
       gl.enableVertexAttribArray(shaderProgram.vertexNormalAttribute);
 
       gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
@@ -194,8 +210,7 @@ function setMatrixUniforms() {
   gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
 
   var normalMatrix = mat3.create();
-  mat4.toInverseMat3(mvMatrix, normalMatrix);
-  mat3.transpose(normalMatrix);
+  mat3.normalFromMat4(normalMatrix, mvMatrix);
   gl.uniformMatrix3fv(shaderProgram.nMatrixUniform, false, normalMatrix);
 }
 
@@ -237,9 +252,11 @@ function handleLoadedModel(teapotData) {
 }
 
 function loadModel() {
-  fetch(`./model/${parameters.currentModel}.json`).then(r=>r.json()).then(r => {
-    handleLoadedModel(r);
-  });
+  fetch(`./model/${parameters.currentModel}.json`)
+    .then((r) => r.json())
+    .then((r) => {
+      handleLoadedModel(r);
+    });
 }
 
 /*
@@ -261,22 +278,22 @@ function drawScene() {
 
   // Setup Projection Matrix
   mat4.perspective(
+    pMatrix,
     parameters.camera.fov,
     gl.viewportWidth / gl.viewportHeight,
     0.1,
-    100.0,
-    pMatrix
+    100.0
   );
 
   // Setup Model-View Matrix
   mat4.identity(mvMatrix);
-  mat4.translate(mvMatrix, parameters.camera.position);
+  mat4.translate(mvMatrix, mvMatrix, parameters.camera.position);
   const lookup = {
-    "x": [1, 0, 0],
-    "y": [0, 1, 0],
-    "z": [0, 0, 1]
-  }
-  mat4.rotate(mvMatrix, degToRad(currentAngle), lookup[parameters.turnAxis]);
+    x: [1, 0, 0],
+    y: [0, 1, 0],
+    z: [0, 0, 1],
+  };
+  mat4.rotate(mvMatrix, mvMatrix, degToRad(currentAngle), lookup[parameters.turnAxis]);
 
   setMatrixUniforms();
 
@@ -292,7 +309,14 @@ function drawScene() {
   );
 
   gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexNormalBuffer);
-  gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute, modelVertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribPointer(
+    shaderProgram.vertexNormalAttribute,
+    modelVertexNormalBuffer.itemSize,
+    gl.FLOAT,
+    false,
+    0,
+    0
+  );
 
   // Setup teapot front color data
   gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexFrontColorBuffer);
