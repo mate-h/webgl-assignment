@@ -8,21 +8,55 @@ var shaderProgram;
 var mvMatrix = mat4.create();
 var pMatrix = mat4.create();
 
-var teapotVertexPositionBuffer;
-var teapotVertexNormalBuffer;
-var teapotVertexFrontColorBuffer;
+var modelVertexPositionBuffer;
+var modelVertexNormalBuffer;
+var modelVertexFrontColorBuffer;
 
-var teapotAngle = 180;
+var currentAngle = 180;
 var lastTime = 0;
 
 //parameters
 const gui = new dat.GUI({name: 'Parameters'});
 const parameters = {
-  currentShader: "phong"
+  currentShader: "phong",
+  currentModel: "Teapot",
+  camera: {
+    position: [0, 0, -40],
+    fov: 45
+  },
+  turnSpeed: 0.03,
+  turnAxis: "y"
 }
 gui.add(parameters, "currentShader").options("flat", "gouraud", "phong", "main").name("Shader").onChange((a) => {
   initShaders();
 });
+const modelOptions = [
+  "Car_road",
+  "Church_s",
+  "Csie",
+  "Easter",
+  "Fighter",
+  "Kangaroo",
+  "Longteap",
+  "Mercedes",
+  "Mig27",
+  "Patchair",
+  "Plant",
+  "Teapot",
+  "Tomcat"
+]
+gui.add(parameters, "currentModel").options(modelOptions).name("Model").onChange(o => {
+  loadModel();
+})
+const camGui = gui.addFolder("Camera")
+camGui.add(parameters.camera.position, "0", -10, 10, 0.01).name("x");
+camGui.add(parameters.camera.position, "1", -10, 10, 0.01).name("y");
+camGui.add(parameters.camera.position, "2", -40, 0, 0.01).name("z");
+camGui.add(parameters.camera, "fov", 1, 179, 0.01).name("FOV");
+gui.add(parameters, "turnAxis").options("x", "y", "z").name("Turn axis").onChange(() => {
+  currentAngle = 0;
+});
+gui.add(parameters, "turnSpeed", 0, 0.2, 0.001).name("Turn speed");
 // const currentShader = "phong";
 
 function initGL(canvas) {
@@ -169,48 +203,43 @@ function degToRad(degrees) {
   return (degrees * Math.PI) / 180;
 }
 
-function handleLoadedTeapot(teapotData) {
-  teapotVertexPositionBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexPositionBuffer);
+function handleLoadedModel(teapotData) {
+  modelVertexPositionBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexPositionBuffer);
   gl.bufferData(
     gl.ARRAY_BUFFER,
     new Float32Array(teapotData.vertexPositions),
     gl.STATIC_DRAW
   );
-  teapotVertexPositionBuffer.itemSize = 3;
-  teapotVertexPositionBuffer.numItems = teapotData.vertexPositions.length / 3;
+  modelVertexPositionBuffer.itemSize = 3;
+  modelVertexPositionBuffer.numItems = teapotData.vertexPositions.length / 3;
 
-  teapotVertexNormalBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexNormalBuffer);
+  modelVertexNormalBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexNormalBuffer);
   gl.bufferData(
     gl.ARRAY_BUFFER,
     new Float32Array(teapotData.vertexNormals),
     gl.STATIC_DRAW
   );
-  teapotVertexNormalBuffer.itemSize = 3;
-  teapotVertexNormalBuffer.numItems = teapotData.vertexNormals.length / 3;
+  modelVertexNormalBuffer.itemSize = 3;
+  modelVertexNormalBuffer.numItems = teapotData.vertexNormals.length / 3;
 
-  teapotVertexFrontColorBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexFrontColorBuffer);
+  modelVertexFrontColorBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexFrontColorBuffer);
   gl.bufferData(
     gl.ARRAY_BUFFER,
     new Float32Array(teapotData.vertexFrontcolors),
     gl.STATIC_DRAW
   );
-  teapotVertexFrontColorBuffer.itemSize = 3;
-  teapotVertexFrontColorBuffer.numItems =
+  modelVertexFrontColorBuffer.itemSize = 3;
+  modelVertexFrontColorBuffer.numItems =
     teapotData.vertexFrontcolors.length / 3;
 }
 
-function loadTeapot() {
-  var request = new XMLHttpRequest();
-  request.open("GET", "./model/Teapot.json");
-  request.onreadystatechange = function () {
-    if (request.readyState == 4) {
-      handleLoadedTeapot(JSON.parse(request.responseText));
-    }
-  };
-  request.send();
+function loadModel() {
+  fetch(`./model/${parameters.currentModel}.json`).then(r=>r.json()).then(r => {
+    handleLoadedModel(r);
+  });
 }
 
 /*
@@ -223,16 +252,16 @@ function drawScene() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   if (
-    teapotVertexPositionBuffer == null ||
-    teapotVertexNormalBuffer == null ||
-    teapotVertexFrontColorBuffer == null
+    modelVertexPositionBuffer == null ||
+    modelVertexNormalBuffer == null ||
+    modelVertexFrontColorBuffer == null
   ) {
     return;
   }
 
   // Setup Projection Matrix
   mat4.perspective(
-    45,
+    parameters.camera.fov,
     gl.viewportWidth / gl.viewportHeight,
     0.1,
     100.0,
@@ -241,44 +270,49 @@ function drawScene() {
 
   // Setup Model-View Matrix
   mat4.identity(mvMatrix);
-  mat4.translate(mvMatrix, [0, 0, -40]);
-  mat4.rotate(mvMatrix, degToRad(teapotAngle), [0, 1, 0]);
+  mat4.translate(mvMatrix, parameters.camera.position);
+  const lookup = {
+    "x": [1, 0, 0],
+    "y": [0, 1, 0],
+    "z": [0, 0, 1]
+  }
+  mat4.rotate(mvMatrix, degToRad(currentAngle), lookup[parameters.turnAxis]);
 
   setMatrixUniforms();
 
   // Setup teapot position data
-  gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexPositionBuffer);
+  gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexPositionBuffer);
   gl.vertexAttribPointer(
     shaderProgram.vertexPositionAttribute,
-    teapotVertexPositionBuffer.itemSize,
+    modelVertexPositionBuffer.itemSize,
     gl.FLOAT,
     false,
     0,
     0
   );
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexNormalBuffer);
-  gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute, teapotVertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexNormalBuffer);
+  gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute, modelVertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
   // Setup teapot front color data
-  gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexFrontColorBuffer);
+  gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexFrontColorBuffer);
   gl.vertexAttribPointer(
     shaderProgram.vertexFrontColorAttribute,
-    teapotVertexFrontColorBuffer.itemSize,
+    modelVertexFrontColorBuffer.itemSize,
     gl.FLOAT,
     false,
     0,
     0
   );
 
-  gl.drawArrays(gl.TRIANGLES, 0, teapotVertexPositionBuffer.numItems);
+  gl.drawArrays(gl.TRIANGLES, 0, modelVertexPositionBuffer.numItems);
 }
 
 function animate() {
   var timeNow = new Date().getTime();
   if (lastTime != 0) {
     var elapsed = timeNow - lastTime;
-    teapotAngle += 0.03 * elapsed;
+    currentAngle += parameters.turnSpeed * elapsed;
   }
 
   lastTime = timeNow;
@@ -294,7 +328,7 @@ function webGLStart() {
   var canvas = document.getElementById("ICG-canvas");
   initGL(canvas);
   initShaders().then(() => {
-    loadTeapot();
+    loadModel();
 
     gl.clearColor(0.0, 0.2, 0.2, 1.0);
     gl.enable(gl.DEPTH_TEST);
