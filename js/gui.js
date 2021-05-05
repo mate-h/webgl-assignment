@@ -1,6 +1,6 @@
 // imports
 import * as dat from "dat.gui";
-import { loadScene, initShaders } from ".";
+import { loadScene, initShaders, setBackground } from ".";
 
 //parameters
 const gui = new dat.GUI({ name: "Parameters" });
@@ -16,6 +16,7 @@ const defaultObject = {
 };
 export const parameters = {
   currentShader: "phong",
+  background: [20,20,20],
   wireframe: false,
   camera: {
     position: [0, 0, -40],
@@ -42,6 +43,10 @@ export const parameters = {
   turnSpeed: 0.03,
   turnAxis: "y",
 };
+
+gui.addColor(parameters, 'background').name("Background").onChange(c => {
+  setBackground(c);
+});
 
 gui
   .add(parameters, "currentShader")

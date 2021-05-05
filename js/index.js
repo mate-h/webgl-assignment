@@ -276,13 +276,19 @@ function tick() {
   animate();
 }
 
+export function setBackground(color) {
+  const bg = color.map(c => c/255)
+  gl.clearColor(...bg, 1.0);
+}
+
 function webGLStart() {
   var canvas = document.getElementById("ICG-canvas");
   initGL(canvas);
   initShaders().then(() => {
     loadScene();
 
-    gl.clearColor(0.0, 0.2, 0.2, 1.0);
+    const bg = parameters.background.map(c => c/255)
+    gl.clearColor(...bg, 1.0);
     gl.enable(gl.DEPTH_TEST);
 
     tick();
