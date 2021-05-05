@@ -28,7 +28,7 @@ npm i
 npm run dev
 ```
 
-# Solutions
+## Solutions
 
 Flat shading  
 https://stackoverflow.com/questions/40101023/flat-shading-in-webgl
