@@ -105,6 +105,7 @@ export function initShaders() {
         shaderProgram,
         "uNMatrix"
       );
+      shaderProgram.pointLightCountUniform = gl.getUniformLocation(shaderProgram, "uPointLightCount");
     }
   );
 }
@@ -116,6 +117,17 @@ function setMatrixUniforms() {
   var normalMatrix = mat3.create();
   mat3.normalFromMat4(normalMatrix, mvMatrix);
   gl.uniformMatrix3fv(shaderProgram.nMatrixUniform, false, normalMatrix);
+
+  // Lighting
+  const lights = parameters.scene.filter(o => o.type === 'light');
+  const lightCount = lights.length;
+  gl.uniform1i(shaderProgram.pointLightCountUniform, lightCount);
+  lights.forEach(l => {
+    const lightPos = l.transform.translate;
+    var uPointLightsLoc = gl.getUniformLocation(shaderProgram, "uPointLights[0].position");
+    gl.uniform3fv(uPointLightsLoc, lightPos);
+  })
+  
 }
 
 function degToRad(degrees) {
@@ -166,7 +178,9 @@ function handleLoadedModel(modelData) {
 
 export function loadScene() {
   Promise.all(
-    parameters.scene.map((obj) =>
+    parameters.scene
+    .filter(o => o.type === 'mesh')
+    .map((obj) =>
       fetch(`./model/${obj.model}.json`).then((r) => r.json())
     )
   ).then((vals) => {

@@ -56,11 +56,18 @@ export const parameters = {
         shear: 90,
       },
     },
+    {
+      type: "light",
+      transform: {
+        translate: [-10.0,4.0,-16.0]
+      }
+    }
   ],
   addObject: () => {
     parameters.scene.push(deepcopy(defaultObject));
     const i = parameters.scene.length - 1;
     addParam(parameters.scene[i], i);
+    refreshAddObject();
     loadScene();
   },
   turnSpeed: 0.01,
@@ -104,38 +111,66 @@ camGui.add(parameters.camera, "fov", 1, 179, 0.001).name("FOV");
 
 const sceneGui = gui.addFolder("Scene");
 sceneGui.open();
-parameters.scene.forEach((obj, i) => {
-  addParam(obj, i);
-});
-sceneGui.add(parameters, "addObject").name("Add object");
 
+let addObjectController = sceneGui.add(parameters, "addObject").name("Add object");
+function refreshAddObject() {
+  try {
+    sceneGui.remove(addObjectController);
+  }catch(e){}
+  addObjectController = sceneGui.add(parameters, "addObject").name("Add object");
+}
 function addParam(obj, i) {
-  const name = `Object ${i + 1}`;
-  const objFolder = sceneGui.addFolder(name);
-  objFolder.open();
-  objFolder.add(obj, "type").name("Type").options("mesh", "light");
-  objFolder
-    .add(obj, "model")
-    .options(modelOptions)
-    .name("Model")
-    .onChange((o) => {
+  let objFolder;
+  function refreshType(t) {
+    const n = parameters.scene.filter(o => o.type === obj.type).findIndex(o => o === obj);
+    const name = `${obj.type} ${n + 1}`;
+    try {
+      sceneGui.removeFolder(objFolder);
+    }catch(e){}
+    objFolder = sceneGui.addFolder(name);
+    refreshAddObject();
+    objFolder.open();
+    objFolder.add(obj, "type").name("Type").options("mesh", "light").onChange(type => {
+      refreshType(type);
       loadScene();
     });
-  const transformFolder = objFolder.addFolder("Transform");
-  transformFolder.open();
-  Object.entries({
-    translate: "Translate",
-    rotate: "Rotate",
-  }).forEach(([k, v]) => {
-    const folder = transformFolder.addFolder(v);
-    if (k === "translate") folder.open();
-    folder.add(obj.transform[k], "0").name("x");
-    folder.add(obj.transform[k], "1").name("y");
-    folder.add(obj.transform[k], "2").name("z");
-  });
-  transformFolder.add(obj.transform, "scale", 0, 40, 0.1).name("Scale");
-  transformFolder.add(obj.transform, "shear", 1, 179).name("Shear");
-  objFolder
+    if (t === 'mesh') {
+      objFolder
+        .add(obj, "model")
+        .options(modelOptions)
+        .name("Model")
+        .onChange((o) => {
+          loadScene();
+        });
+      const transformFolder = objFolder.addFolder("Transform");
+      transformFolder.open();
+      Object.entries({
+        translate: "Translate",
+        rotate: "Rotate",
+      }).forEach(([k, v]) => {
+        const folder = transformFolder.addFolder(v);
+        if (k === "translate") folder.open();
+        folder.add(obj.transform[k], "0").name("x");
+        folder.add(obj.transform[k], "1").name("y");
+        folder.add(obj.transform[k], "2").name("z");
+      });
+      transformFolder.add(obj.transform, "scale", 0, 40, 0.1).name("Scale");
+      transformFolder.add(obj.transform, "shear", 1, 179).name("Shear");
+    }
+    else if (t === 'light') {
+      const transformFolder = objFolder.addFolder("Transform");
+      transformFolder.open();
+      Object.entries({
+        translate: "Translate",
+      }).forEach(([k, v]) => {
+        const folder = transformFolder.addFolder(v);
+        if (k === "translate") folder.open();
+        folder.add(obj.transform[k], "0").name("x");
+        folder.add(obj.transform[k], "1").name("y");
+        folder.add(obj.transform[k], "2").name("z");
+      });
+    }
+    objFolder
     .add(
       {
         remove: () => {
@@ -148,7 +183,13 @@ function addParam(obj, i) {
       "remove"
     )
     .name("Remove");
+  }
+  refreshType(obj.type);
 }
+
+parameters.scene.forEach((obj, i) => {
+  addParam(obj, i);
+});
 
 gui.add(parameters, "turnSpeed", 0, 0.2, 0.001).name("Turn speed");
 

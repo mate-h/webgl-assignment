@@ -38,3 +38,6 @@ https://github.com/tparisi/webgl-lessons/tree/master/lesson14
 
 Camera implementation  
 https://webglfundamentals.org/webgl/lessons/webgl-3d-camera.html
+
+Lighting struct uniform  
+https://webglfundamentals.org/webgl/lessons/webgl-shaders-and-glsl.html
