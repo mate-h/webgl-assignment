@@ -4,6 +4,8 @@
 https://webgl-assignment.vercel.app/
 
 ## Description
+> Based on the contents of [html-webcgl-assignment.zip](./assets/html-webcgl-assignment.zip)
+
 1. Implement “Flat Shading”, “Gouraud Shading" and "Phong Shading” on top of vertexShader and fragmentShader with Phong reflection model
 
 2. Enable multiple transformations (four fundamental transformations) on objects in a scene.
