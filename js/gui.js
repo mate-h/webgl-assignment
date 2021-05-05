@@ -4,6 +4,16 @@ import { loadScene, initShaders } from ".";
 
 //parameters
 const gui = new dat.GUI({ name: "Parameters" });
+const defaultObject = {
+  type: "mesh",
+  model: "Teapot",
+  transform: {
+    translate: [0, 0, 0],
+    scale: [0, 0, 0],
+    rotate: [0, 0, 0],
+    shear: [0, 0, 0],
+  }
+};
 export const parameters = {
   currentShader: "phong",
   wireframe: false,
@@ -12,33 +22,25 @@ export const parameters = {
     fov: 45,
   },
   scene: [
-    {
-      type: "mesh",
-      model: "Teapot",
-      transform: {
-        translate: [0,0,0],
-        scale: [0,0,0],
-        rotate: [0,0,0],
-        shear: [0,0,0]
-      }
-    }
+    defaultObject
   ],
   addObject: () => {
     parameters.scene.push({
       type: "mesh",
       model: "Teapot",
       transform: {
-        translate: [0,0,0],
-        scale: [0,0,0],
-        rotate: [0,0,0],
-        shear: [0,0,0]
-      }
+        translate: [0, 0, 0],
+        scale: [0, 0, 0],
+        rotate: [0, 0, 0],
+        shear: [0, 0, 0],
+      },
     });
     const i = parameters.scene.length - 1;
     addParam(parameters.scene[i], i);
+    loadScene();
   },
   turnSpeed: 0.03,
-  turnAxis: "y"
+  turnAxis: "y",
 };
 
 gui
@@ -74,10 +76,12 @@ const sceneGui = gui.addFolder("Scene");
 sceneGui.open();
 parameters.scene.forEach((obj, i) => {
   addParam(obj, i);
-})
+});
+sceneGui.add(parameters, "addObject").name("Add object");
 
 function addParam(obj, i) {
-  const objFolder = sceneGui.addFolder(`Object ${i + 1}`);
+  const name = `Object ${i + 1}`
+  const objFolder = sceneGui.addFolder(name);
   objFolder.open();
   objFolder.add(obj, "type").name("Type").options("mesh", "light");
   objFolder
@@ -87,20 +91,28 @@ function addParam(obj, i) {
     .onChange((o) => {
       loadScene();
     });
-  const transformFolder = objFolder.addFolder('Transform');
+  const transformFolder = objFolder.addFolder("Transform");
   transformFolder.open();
   Object.entries({
     translate: "Translate",
     rotate: "Rotate",
     scale: "Scale",
     shear: "Shear",
-  }).forEach(([k,v]) => {
+  }).forEach(([k, v]) => {
     const folder = transformFolder.addFolder(v);
-    if (k === 'translate') folder.open();
+    if (k === "translate") folder.open();
     folder.add(obj.transform[k], "0").name("x");
     folder.add(obj.transform[k], "1").name("y");
     folder.add(obj.transform[k], "2").name("z");
-  })
+  });
+  objFolder.add({
+    remove: () => {
+      const idx = parameters.scene.findIndex(v => v == obj);
+      parameters.scene.splice(idx, 1);
+      sceneGui.removeFolder(objFolder);
+      loadScene();
+    }
+  }, "remove").name("Remove");
 }
 
 gui
@@ -111,4 +123,3 @@ gui
     currentAngle = 0;
   });
 gui.add(parameters, "turnSpeed", 0, 0.2, 0.001).name("Turn speed");
-gui.add(parameters, "addObject").name("Add object");

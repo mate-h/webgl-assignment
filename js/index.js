@@ -9,12 +9,11 @@ var shaderProgram;
 var mvMatrix = mat4.create();
 var pMatrix = mat4.create();
 
-var modelVertexPositionBuffer;
-var modelVertexNormalBuffer;
-var modelVertexFrontColorBuffer;
-
 var currentAngle = 180;
 var lastTime = 0;
+
+// scene
+let scene = [];
 
 function initGL(canvas) {
   try {
@@ -53,9 +52,6 @@ function getShaderAsync(gl, path, type = gl.FRAGMENT_SHADER) {
 }
 
 export function initShaders() {
-  // var fragmentShader = getShader(gl, "fragmentShader");
-  // var vertexShader = getShader(gl, "vertexShader");
-
   const loadFragment = getShaderAsync(
     gl,
     `./shaders/${parameters.currentShader}/fragment.glsl`,
@@ -126,44 +122,58 @@ function degToRad(degrees) {
   return (degrees * Math.PI) / 180;
 }
 
-function handleLoadedModel(teapotData) {
+function handleLoadedModel(modelData) {
+  var modelVertexPositionBuffer;
+  var modelVertexNormalBuffer;
+  var modelVertexFrontColorBuffer;
+
   modelVertexPositionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexPositionBuffer);
   gl.bufferData(
     gl.ARRAY_BUFFER,
-    new Float32Array(teapotData.vertexPositions),
+    new Float32Array(modelData.vertexPositions),
     gl.STATIC_DRAW
   );
   modelVertexPositionBuffer.itemSize = 3;
-  modelVertexPositionBuffer.numItems = teapotData.vertexPositions.length / 3;
+  modelVertexPositionBuffer.numItems = modelData.vertexPositions.length / 3;
 
   modelVertexNormalBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexNormalBuffer);
   gl.bufferData(
     gl.ARRAY_BUFFER,
-    new Float32Array(teapotData.vertexNormals),
+    new Float32Array(modelData.vertexNormals),
     gl.STATIC_DRAW
   );
   modelVertexNormalBuffer.itemSize = 3;
-  modelVertexNormalBuffer.numItems = teapotData.vertexNormals.length / 3;
+  modelVertexNormalBuffer.numItems = modelData.vertexNormals.length / 3;
 
   modelVertexFrontColorBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexFrontColorBuffer);
   gl.bufferData(
     gl.ARRAY_BUFFER,
-    new Float32Array(teapotData.vertexFrontcolors),
+    new Float32Array(modelData.vertexFrontcolors),
     gl.STATIC_DRAW
   );
   modelVertexFrontColorBuffer.itemSize = 3;
-  modelVertexFrontColorBuffer.numItems =
-    teapotData.vertexFrontcolors.length / 3;
+  modelVertexFrontColorBuffer.numItems = modelData.vertexFrontcolors.length / 3;
+
+  return {
+    modelVertexPositionBuffer,
+    modelVertexNormalBuffer,
+    modelVertexFrontColorBuffer,
+  };
 }
 
 export function loadScene() {
-  Promise.all(parameters.scene.map(obj => fetch(`./model/${obj.model}.json`)
-  .then((r) => r.json()))).then(vals => {
-    handleLoadedModel(vals[0]);
-  })
+  Promise.all(
+    parameters.scene.map((obj) =>
+      fetch(`./model/${obj.model}.json`).then((r) => r.json())
+    )
+  ).then((vals) => {
+    scene = [];
+    const buffers = vals.map(v => handleLoadedModel(v));
+    scene.push(...buffers);
+  });
 }
 
 /*
@@ -175,14 +185,6 @@ function drawScene() {
   gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  if (
-    modelVertexPositionBuffer == null ||
-    modelVertexNormalBuffer == null ||
-    modelVertexFrontColorBuffer == null
-  ) {
-    return;
-  }
-
   // Setup Projection Matrix
   mat4.perspective(
     pMatrix,
@@ -192,63 +194,69 @@ function drawScene() {
     100.0
   );
 
-  // Setup Model-View Matrix
-  mat4.identity(mvMatrix);
-  mat4.translate(mvMatrix, mvMatrix, parameters.camera.position);
-  const lookup = {
-    x: [1, 0, 0],
-    y: [0, 1, 0],
-    z: [0, 0, 1],
-  };
-  mat4.rotate(
-    mvMatrix,
-    mvMatrix,
-    degToRad(currentAngle),
-    lookup[parameters.turnAxis]
+  scene.forEach(
+    ({
+      modelVertexPositionBuffer,
+      modelVertexNormalBuffer,
+      modelVertexFrontColorBuffer,
+    }) => {
+      // Setup Model-View Matrix
+      mat4.identity(mvMatrix);
+      mat4.translate(mvMatrix, mvMatrix, parameters.camera.position);
+      const lookup = {
+        x: [1, 0, 0],
+        y: [0, 1, 0],
+        z: [0, 0, 1],
+      };
+      mat4.rotate(
+        mvMatrix,
+        mvMatrix,
+        degToRad(currentAngle),
+        lookup[parameters.turnAxis]
+      );
+
+      setMatrixUniforms();
+
+      // Setup teapot position data
+      gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexPositionBuffer);
+      gl.vertexAttribPointer(
+        shaderProgram.vertexPositionAttribute,
+        modelVertexPositionBuffer.itemSize,
+        gl.FLOAT,
+        false,
+        0,
+        0
+      );
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexNormalBuffer);
+      gl.vertexAttribPointer(
+        shaderProgram.vertexNormalAttribute,
+        modelVertexNormalBuffer.itemSize,
+        gl.FLOAT,
+        false,
+        0,
+        0
+      );
+
+      // Setup teapot front color data
+      gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexFrontColorBuffer);
+      gl.vertexAttribPointer(
+        shaderProgram.vertexFrontColorAttribute,
+        modelVertexFrontColorBuffer.itemSize,
+        gl.FLOAT,
+        false,
+        0,
+        0
+      );
+
+      if (parameters.wireframe) {
+        gl.drawArrays(gl.LINE_STRIP, 0, modelVertexPositionBuffer.numItems);
+      } else {
+        gl.drawArrays(gl.TRIANGLES, 0, modelVertexPositionBuffer.numItems);
+      }
+    }
   );
 
-  setMatrixUniforms();
-
-  // Setup teapot position data
-  gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexPositionBuffer);
-  gl.vertexAttribPointer(
-    shaderProgram.vertexPositionAttribute,
-    modelVertexPositionBuffer.itemSize,
-    gl.FLOAT,
-    false,
-    0,
-    0
-  );
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexNormalBuffer);
-  gl.vertexAttribPointer(
-    shaderProgram.vertexNormalAttribute,
-    modelVertexNormalBuffer.itemSize,
-    gl.FLOAT,
-    false,
-    0,
-    0
-  );
-
-  // Setup teapot front color data
-  gl.bindBuffer(gl.ARRAY_BUFFER, modelVertexFrontColorBuffer);
-  gl.vertexAttribPointer(
-    shaderProgram.vertexFrontColorAttribute,
-    modelVertexFrontColorBuffer.itemSize,
-    gl.FLOAT,
-    false,
-    0,
-    0
-  );
-
-
-  if (parameters.wireframe) {
-    gl.drawArrays(gl.LINE_STRIP, 0, modelVertexPositionBuffer.numItems);
-  }
-  else {
-    gl.drawArrays(gl.TRIANGLES, 0, modelVertexPositionBuffer.numItems);
-  }
-  
   gl.flush();
 }
 
