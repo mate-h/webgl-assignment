@@ -9,9 +9,9 @@ const defaultObject = {
   model: "Teapot",
   transform: {
     translate: [0, 0, 0],
-    scale: [0, 0, 0],
+    scale: 1,
     rotate: [0, 0, 0],
-    shear: [0, 0, 0],
+    shear: 90,
   }
 };
 export const parameters = {
@@ -26,16 +26,7 @@ export const parameters = {
     defaultObject
   ],
   addObject: () => {
-    parameters.scene.push({
-      type: "mesh",
-      model: "Teapot",
-      transform: {
-        translate: [0, 0, 0],
-        scale: [0, 0, 0],
-        rotate: [0, 0, 0],
-        shear: [0, 0, 0],
-      },
-    });
+    parameters.scene.push(defaultObject);
     const i = parameters.scene.length - 1;
     addParam(parameters.scene[i], i);
     loadScene();
@@ -73,7 +64,7 @@ const modelOptions = [
 const camGui = gui.addFolder("Camera");
 camGui.add(parameters.camera.position, "0", -10, 10, 0.01).name("x");
 camGui.add(parameters.camera.position, "1", -10, 10, 0.01).name("y");
-camGui.add(parameters.camera.position, "2", -40, 0, 0.01).name("z");
+camGui.add(parameters.camera.position, "2", 0, 40, 0.01).name("z");
 camGui.add(parameters.camera, "fov", 1, 179, 0.001).name("FOV");
 
 const sceneGui = gui.addFolder("Scene");
@@ -100,8 +91,6 @@ function addParam(obj, i) {
   Object.entries({
     translate: "Translate",
     rotate: "Rotate",
-    scale: "Scale",
-    shear: "Shear",
   }).forEach(([k, v]) => {
     const folder = transformFolder.addFolder(v);
     if (k === "translate") folder.open();
@@ -109,6 +98,8 @@ function addParam(obj, i) {
     folder.add(obj.transform[k], "1").name("y");
     folder.add(obj.transform[k], "2").name("z");
   });
+  transformFolder.add(obj.transform, "scale", 0, 4, 0.01).name("Scale");
+  transformFolder.add(obj.transform, "shear", 1, 179).name("Shear");
   objFolder.add({
     remove: () => {
       const idx = parameters.scene.findIndex(v => v == obj);

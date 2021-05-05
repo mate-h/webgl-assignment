@@ -171,10 +171,12 @@ export function loadScene() {
     )
   ).then((vals) => {
     scene = [];
-    const buffers = vals.map(v => handleLoadedModel(v)).map((o,i) => ({
-      ...o,
-      object: parameters.scene[i]
-    }));
+    const buffers = vals
+      .map((v) => handleLoadedModel(v))
+      .map((o, i) => ({
+        ...o,
+        object: parameters.scene[i],
+      }));
     scene.push(...buffers);
   });
 }
@@ -211,11 +213,31 @@ function drawScene() {
       modelVertexPositionBuffer,
       modelVertexNormalBuffer,
       modelVertexFrontColorBuffer,
-      object
+      object,
     }) => {
       // Setup Model-View Matrix
       mat4.copy(mvMatrix, viewMatrix);
       mat4.translate(mvMatrix, mvMatrix, object.transform.translate);
+      const s = object.transform.scale;
+      mat4.scale(mvMatrix, mvMatrix, [s,s,s]);
+      object.transform.rotate.forEach((v, i) => {
+        const lookup = [
+          [1, 0, 0],
+          [0, 1, 0],
+          [0, 0, 1],
+        ];
+        mat4.rotate(mvMatrix, mvMatrix, degToRad(v), lookup[i]);
+      });
+      const phi = object.transform.shear;
+      const cot = (x) => 1 / Math.tan(x);
+      const shearMatrix = mat4.create();
+      shearMatrix.set([
+        1, cot(degToRad(phi)), 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1,
+      ]);
+      mat4.multiply(mvMatrix, mvMatrix, shearMatrix);
 
       setMatrixUniforms();
 
@@ -279,7 +301,7 @@ function tick() {
 }
 
 export function setBackground(color) {
-  const bg = color.map(c => c/255)
+  const bg = color.map((c) => c / 255);
   gl.clearColor(...bg, 1.0);
 }
 
@@ -289,7 +311,7 @@ function webGLStart() {
   initShaders().then(() => {
     loadScene();
 
-    const bg = parameters.background.map(c => c/255)
+    const bg = parameters.background.map((c) => c / 255);
     gl.clearColor(...bg, 1.0);
     gl.enable(gl.DEPTH_TEST);
 
