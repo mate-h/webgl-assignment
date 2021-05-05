@@ -295,7 +295,7 @@ function animate() {
 }
 
 function tick() {
-  requestAnimFrame(tick);
+  requestAnimationFrame(tick);
   drawScene();
   animate();
 }
