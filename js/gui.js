@@ -7,6 +7,9 @@ const gui = new dat.GUI({ name: "Parameters" });
 const defaultObject = {
   type: "mesh",
   model: "Teapot",
+  color: [255, 255, 255],
+  intensity: 1,
+  on: true,
   transform: {
     translate: [0, 0, 0],
     scale: 1,
@@ -58,10 +61,29 @@ export const parameters = {
     },
     {
       type: "light",
+      color: [255, 255, 255],
+      intensity: 1,
+      on: true,
+      transform: { translate: [-10, 4, -16] },
+    },
+    {
+      type: "light",
+      color: [95, 31, 202],
+      intensity: 1,
+      on: true,
       transform: {
-        translate: [-10.0,4.0,-16.0]
-      }
-    }
+        translate: [0, 20, -50],
+      },
+    },
+    {
+      type: "light",
+      color: [76, 130, 39],
+      intensity: 1,
+      on: true,
+      transform: {
+        translate: [60, 20, 0],
+      },
+    },
   ],
   addObject: () => {
     parameters.scene.push(deepcopy(defaultObject));
@@ -112,29 +134,38 @@ camGui.add(parameters.camera, "fov", 1, 179, 0.001).name("FOV");
 const sceneGui = gui.addFolder("Scene");
 sceneGui.open();
 
-let addObjectController = sceneGui.add(parameters, "addObject").name("Add object");
+let addObjectController = sceneGui
+  .add(parameters, "addObject")
+  .name("Add object");
 function refreshAddObject() {
   try {
     sceneGui.remove(addObjectController);
-  }catch(e){}
-  addObjectController = sceneGui.add(parameters, "addObject").name("Add object");
+  } catch (e) {}
+  addObjectController = sceneGui
+    .add(parameters, "addObject")
+    .name("Add object");
 }
 function addParam(obj, i) {
   let objFolder;
   function refreshType(t) {
-    const n = parameters.scene.filter(o => o.type === obj.type).findIndex(o => o === obj);
-    const name = `${obj.type} ${n + 1}`;
+    const n = parameters.scene
+      .filter((o) => o.type === t)
+      .findIndex((o) => o === obj);
+    const name = `${t} ${n + 1}`;
     try {
       sceneGui.removeFolder(objFolder);
-    }catch(e){}
+    } catch (e) {}
     objFolder = sceneGui.addFolder(name);
     refreshAddObject();
-    objFolder.open();
-    objFolder.add(obj, "type").name("Type").options("mesh", "light").onChange(type => {
-      refreshType(type);
-      loadScene();
-    });
-    if (t === 'mesh') {
+    objFolder
+      .add(obj, "type")
+      .options("mesh", "light")
+      .name("Type")
+      .onChange((type) => {
+        refreshType(type);
+        loadScene();
+      });
+    if (t === "mesh") {
       objFolder
         .add(obj, "model")
         .options(modelOptions)
@@ -156,8 +187,8 @@ function addParam(obj, i) {
       });
       transformFolder.add(obj.transform, "scale", 0, 40, 0.1).name("Scale");
       transformFolder.add(obj.transform, "shear", 1, 179).name("Shear");
-    }
-    else if (t === 'light') {
+    } else if (t === "light") {
+      objFolder.add(obj, "on").name("On/Off");
       const transformFolder = objFolder.addFolder("Transform");
       transformFolder.open();
       Object.entries({
@@ -169,20 +200,22 @@ function addParam(obj, i) {
         folder.add(obj.transform[k], "1").name("y");
         folder.add(obj.transform[k], "2").name("z");
       });
+      objFolder.addColor(obj, "color").name("Color");
+      objFolder.add(obj, "intensity", 0, 4, 0.01).name("Intensity");
     }
     objFolder
-    .add(
-      {
-        remove: () => {
-          const idx = parameters.scene.findIndex((v) => v == obj);
-          parameters.scene.splice(idx, 1);
-          sceneGui.removeFolder(objFolder);
-          loadScene();
+      .add(
+        {
+          remove: () => {
+            const idx = parameters.scene.findIndex((v) => v == obj);
+            parameters.scene.splice(idx, 1);
+            sceneGui.removeFolder(objFolder);
+            loadScene();
+          },
         },
-      },
-      "remove"
-    )
-    .name("Remove");
+        "remove"
+      )
+      .name("Remove");
   }
   refreshType(obj.type);
 }

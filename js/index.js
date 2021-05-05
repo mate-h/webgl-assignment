@@ -119,13 +119,18 @@ function setMatrixUniforms() {
   gl.uniformMatrix3fv(shaderProgram.nMatrixUniform, false, normalMatrix);
 
   // Lighting
-  const lights = parameters.scene.filter(o => o.type === 'light');
+  const lights = parameters.scene.filter(o => o.type === 'light' && o.on === true);
   const lightCount = lights.length;
   gl.uniform1i(shaderProgram.pointLightCountUniform, lightCount);
-  lights.forEach(l => {
-    const lightPos = l.transform.translate;
-    var uPointLightsLoc = gl.getUniformLocation(shaderProgram, "uPointLights[0].position");
-    gl.uniform3fv(uPointLightsLoc, lightPos);
+  lights.forEach((l, i) => {
+    const lightTranslate = gl.getUniformLocation(shaderProgram, `uPointLights[${i}].position`);
+    gl.uniform3fv(lightTranslate, l.transform.translate);
+
+    const lightColor = gl.getUniformLocation(shaderProgram, `uPointLights[${i}].color`);
+    gl.uniform3fv(lightColor, l.color.map(c => c/255));
+
+    const lightIntensity = gl.getUniformLocation(shaderProgram, `uPointLights[${i}].intensity`);
+    gl.uniform1f(lightIntensity, l.intensity);
   })
   
 }
@@ -177,9 +182,10 @@ function handleLoadedModel(modelData) {
 }
 
 export function loadScene() {
+  const meshes = parameters.scene
+  .filter(o => o.type === 'mesh');
   Promise.all(
-    parameters.scene
-    .filter(o => o.type === 'mesh')
+    meshes
     .map((obj) =>
       fetch(`./model/${obj.model}.json`).then((r) => r.json())
     )
@@ -189,7 +195,7 @@ export function loadScene() {
       .map((v) => handleLoadedModel(v))
       .map((o, i) => ({
         ...o,
-        object: parameters.scene[i],
+        object: meshes[i],
       }));
     scene.push(...buffers);
   });
