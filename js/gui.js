@@ -28,6 +28,10 @@ export const parameters = {
     position: [0, 0, 40],
     fov: 45,
   },
+  ambientLight: {
+    color: [173, 212, 255],
+    intensity: 0.3,
+  },
   scene: [
     {
       type: "mesh",
@@ -62,14 +66,14 @@ export const parameters = {
     {
       type: "light",
       color: [255, 255, 255],
-      intensity: 1,
+      intensity: 0.8,
       on: true,
       transform: { translate: [-10, 4, -16] },
     },
     {
       type: "light",
       color: [95, 31, 202],
-      intensity: 1,
+      intensity: 0.5,
       on: true,
       transform: {
         translate: [0, 20, -50],
@@ -78,7 +82,7 @@ export const parameters = {
     {
       type: "light",
       color: [76, 130, 39],
-      intensity: 1,
+      intensity: 0.5,
       on: true,
       transform: {
         translate: [60, 20, 0],
@@ -130,6 +134,12 @@ camGui.add(parameters.camera.position, "0", -10, 10, 0.01).name("x");
 camGui.add(parameters.camera.position, "1", -10, 10, 0.01).name("y");
 camGui.add(parameters.camera.position, "2", 0, 40, 0.01).name("z");
 camGui.add(parameters.camera, "fov", 1, 179, 0.001).name("FOV");
+
+const ambientGui = gui.addFolder("Ambient light");
+ambientGui.addColor(parameters.ambientLight, "color").name("Color");
+ambientGui
+  .add(parameters.ambientLight, "intensity", 0, 4, 0.01)
+  .name("Intensity");
 
 const sceneGui = gui.addFolder("Scene");
 sceneGui.open();

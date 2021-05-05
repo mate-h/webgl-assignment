@@ -12,6 +12,8 @@ struct PointLight
 const int maxLightCount = 128;
 uniform int uPointLightCount;
 uniform PointLight uPointLights[maxLightCount];
+uniform vec3 uAmbientLightColor;
+uniform float uAmbientLightIntensity;
 
 varying vec4 fragcolor;
 varying vec3 vTransformedNormal;
@@ -19,8 +21,7 @@ varying vec4 vPosition;
 
 void main(void) {
   vec3 normal = normalize(vTransformedNormal);
-  float ambientLightIntensity = 0.1;
-  vec3 ambientLightColor = vec3(ambientLightIntensity);
+  vec3 ambientLightColor = uAmbientLightColor * vec3(uAmbientLightIntensity);
   vec3 lightWeighting = ambientLightColor;
   for(int i = 0; i < maxLightCount; i++) {
     if (i >= uPointLightCount) {

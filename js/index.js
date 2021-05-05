@@ -105,7 +105,18 @@ export function initShaders() {
         shaderProgram,
         "uNMatrix"
       );
-      shaderProgram.pointLightCountUniform = gl.getUniformLocation(shaderProgram, "uPointLightCount");
+      shaderProgram.pointLightCountUniform = gl.getUniformLocation(
+        shaderProgram,
+        "uPointLightCount"
+      );
+      shaderProgram.ambientLightColorUniform = gl.getUniformLocation(
+        shaderProgram,
+        "uAmbientLightColor"
+      );
+      shaderProgram.ambientLightIntensityUniform = gl.getUniformLocation(
+        shaderProgram,
+        "uAmbientLightIntensity"
+      );
     }
   );
 }
@@ -119,20 +130,41 @@ function setMatrixUniforms() {
   gl.uniformMatrix3fv(shaderProgram.nMatrixUniform, false, normalMatrix);
 
   // Lighting
-  const lights = parameters.scene.filter(o => o.type === 'light' && o.on === true);
+  gl.uniform3fv(
+    shaderProgram.ambientLightColorUniform,
+    parameters.ambientLight.color.map((c) => c / 255)
+  );
+  gl.uniform1f(
+    shaderProgram.ambientLightIntensityUniform,
+    parameters.ambientLight.intensity
+  );
+  const lights = parameters.scene.filter(
+    (o) => o.type === "light" && o.on === true
+  );
   const lightCount = lights.length;
   gl.uniform1i(shaderProgram.pointLightCountUniform, lightCount);
   lights.forEach((l, i) => {
-    const lightTranslate = gl.getUniformLocation(shaderProgram, `uPointLights[${i}].position`);
+    const lightTranslate = gl.getUniformLocation(
+      shaderProgram,
+      `uPointLights[${i}].position`
+    );
     gl.uniform3fv(lightTranslate, l.transform.translate);
 
-    const lightColor = gl.getUniformLocation(shaderProgram, `uPointLights[${i}].color`);
-    gl.uniform3fv(lightColor, l.color.map(c => c/255));
+    const lightColor = gl.getUniformLocation(
+      shaderProgram,
+      `uPointLights[${i}].color`
+    );
+    gl.uniform3fv(
+      lightColor,
+      l.color.map((c) => c / 255)
+    );
 
-    const lightIntensity = gl.getUniformLocation(shaderProgram, `uPointLights[${i}].intensity`);
+    const lightIntensity = gl.getUniformLocation(
+      shaderProgram,
+      `uPointLights[${i}].intensity`
+    );
     gl.uniform1f(lightIntensity, l.intensity);
-  })
-  
+  });
 }
 
 function degToRad(degrees) {
@@ -182,11 +214,9 @@ function handleLoadedModel(modelData) {
 }
 
 export function loadScene() {
-  const meshes = parameters.scene
-  .filter(o => o.type === 'mesh');
+  const meshes = parameters.scene.filter((o) => o.type === "mesh");
   Promise.all(
-    meshes
-    .map((obj) =>
+    meshes.map((obj) =>
       fetch(`./model/${obj.model}.json`).then((r) => r.json())
     )
   ).then((vals) => {
@@ -239,7 +269,7 @@ function drawScene() {
       mat4.copy(mvMatrix, viewMatrix);
       mat4.translate(mvMatrix, mvMatrix, object.transform.translate);
       const s = object.transform.scale;
-      mat4.scale(mvMatrix, mvMatrix, [s,s,s]);
+      mat4.scale(mvMatrix, mvMatrix, [s, s, s]);
       object.transform.rotate.forEach((v, i) => {
         const lookup = [
           [1, 0, 0],
@@ -252,10 +282,22 @@ function drawScene() {
       const cot = (x) => 1 / Math.tan(x);
       const shearMatrix = mat4.create();
       shearMatrix.set([
-        1, cot(degToRad(phi)), 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1,
+        1,
+        cot(degToRad(phi)),
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
       ]);
       mat4.multiply(mvMatrix, mvMatrix, shearMatrix);
 
