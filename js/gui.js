@@ -19,7 +19,7 @@ export const parameters = {
   background: [20,20,20],
   wireframe: false,
   camera: {
-    position: [0, 0, -40],
+    position: [0, 0, 40],
     fov: 45,
   },
   scene: [
@@ -40,8 +40,7 @@ export const parameters = {
     addParam(parameters.scene[i], i);
     loadScene();
   },
-  turnSpeed: 0.03,
-  turnAxis: "y",
+  turnSpeed: 0.03
 };
 
 gui.addColor(parameters, 'background').name("Background").onChange(c => {
@@ -120,11 +119,4 @@ function addParam(obj, i) {
   }, "remove").name("Remove");
 }
 
-gui
-  .add(parameters, "turnAxis")
-  .options("x", "y", "z")
-  .name("Turn axis")
-  .onChange(() => {
-    currentAngle = 0;
-  });
 gui.add(parameters, "turnSpeed", 0, 0.2, 0.001).name("Turn speed");

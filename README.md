@@ -35,3 +35,6 @@ https://stackoverflow.com/questions/40101023/flat-shading-in-webgl
 
 Phong reflection model  
 https://github.com/tparisi/webgl-lessons/tree/master/lesson14
+
+Camera implementation  
+https://webglfundamentals.org/webgl/lessons/webgl-3d-camera.html

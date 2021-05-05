@@ -171,7 +171,10 @@ export function loadScene() {
     )
   ).then((vals) => {
     scene = [];
-    const buffers = vals.map(v => handleLoadedModel(v));
+    const buffers = vals.map(v => handleLoadedModel(v)).map((o,i) => ({
+      ...o,
+      object: parameters.scene[i]
+    }));
     scene.push(...buffers);
   });
 }
@@ -194,26 +197,25 @@ function drawScene() {
     100.0
   );
 
+  // Compute a matrix for the camera
+  let cameraMatrix = mat4.create();
+  mat4.rotateY(cameraMatrix, cameraMatrix, degToRad(currentAngle));
+  mat4.translate(cameraMatrix, cameraMatrix, parameters.camera.position);
+
+  // Make a view matrix from the camera matrix
+  let viewMatrix = mat4.create();
+  mat4.invert(viewMatrix, cameraMatrix);
+
   scene.forEach(
     ({
       modelVertexPositionBuffer,
       modelVertexNormalBuffer,
       modelVertexFrontColorBuffer,
+      object
     }) => {
       // Setup Model-View Matrix
-      mat4.identity(mvMatrix);
-      mat4.translate(mvMatrix, mvMatrix, parameters.camera.position);
-      const lookup = {
-        x: [1, 0, 0],
-        y: [0, 1, 0],
-        z: [0, 0, 1],
-      };
-      mat4.rotate(
-        mvMatrix,
-        mvMatrix,
-        degToRad(currentAngle),
-        lookup[parameters.turnAxis]
-      );
+      mat4.copy(mvMatrix, viewMatrix);
+      mat4.translate(mvMatrix, mvMatrix, object.transform.translate);
 
       setMatrixUniforms();
 
