@@ -12,31 +12,66 @@ const defaultObject = {
     scale: 1,
     rotate: [0, 0, 0],
     shear: 90,
-  }
+  },
 };
+function deepcopy(o) {
+  return JSON.parse(JSON.stringify(o));
+}
 export const parameters = {
   currentShader: "phong",
-  background: [20,20,20],
+  background: [20, 20, 20],
   wireframe: false,
   camera: {
     position: [0, 0, 40],
     fov: 45,
   },
   scene: [
-    defaultObject
+    {
+      type: "mesh",
+      model: "Teapot",
+      transform: {
+        translate: [0, 3, 1],
+        scale: 0.1,
+        rotate: [16, 3, -24],
+        shear: 85,
+      },
+    },
+    {
+      type: "mesh",
+      model: "Kangaroo",
+      transform: {
+        translate: [0, 8, 0],
+        scale: 10,
+        rotate: [-90, 0, 0],
+        shear: 90,
+      },
+    },
+    {
+      type: "mesh",
+      model: "Csie",
+      transform: {
+        translate: [-10, -8, 2],
+        scale: 20,
+        rotate: [-90, 0, 0],
+        shear: 90,
+      },
+    },
   ],
   addObject: () => {
-    parameters.scene.push(defaultObject);
+    parameters.scene.push(deepcopy(defaultObject));
     const i = parameters.scene.length - 1;
     addParam(parameters.scene[i], i);
     loadScene();
   },
-  turnSpeed: 0.03
+  turnSpeed: 0.01,
 };
 
-gui.addColor(parameters, 'background').name("Background").onChange(c => {
-  setBackground(c);
-});
+gui
+  .addColor(parameters, "background")
+  .name("Background")
+  .onChange((c) => {
+    setBackground(c);
+  });
 
 gui
   .add(parameters, "currentShader")
@@ -75,7 +110,7 @@ parameters.scene.forEach((obj, i) => {
 sceneGui.add(parameters, "addObject").name("Add object");
 
 function addParam(obj, i) {
-  const name = `Object ${i + 1}`
+  const name = `Object ${i + 1}`;
   const objFolder = sceneGui.addFolder(name);
   objFolder.open();
   objFolder.add(obj, "type").name("Type").options("mesh", "light");
@@ -98,16 +133,23 @@ function addParam(obj, i) {
     folder.add(obj.transform[k], "1").name("y");
     folder.add(obj.transform[k], "2").name("z");
   });
-  transformFolder.add(obj.transform, "scale", 0, 4, 0.01).name("Scale");
+  transformFolder.add(obj.transform, "scale", 0, 40, 0.1).name("Scale");
   transformFolder.add(obj.transform, "shear", 1, 179).name("Shear");
-  objFolder.add({
-    remove: () => {
-      const idx = parameters.scene.findIndex(v => v == obj);
-      parameters.scene.splice(idx, 1);
-      sceneGui.removeFolder(objFolder);
-      loadScene();
-    }
-  }, "remove").name("Remove");
+  objFolder
+    .add(
+      {
+        remove: () => {
+          const idx = parameters.scene.findIndex((v) => v == obj);
+          parameters.scene.splice(idx, 1);
+          sceneGui.removeFolder(objFolder);
+          loadScene();
+        },
+      },
+      "remove"
+    )
+    .name("Remove");
 }
 
 gui.add(parameters, "turnSpeed", 0, 0.2, 0.001).name("Turn speed");
+
+window.parameters = parameters;
