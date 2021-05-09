@@ -27,7 +27,17 @@ if (!gl.getExtension('OES_standard_derivatives')){
 git clone https://github.com/mate-h/webgl-assignment
 cd webgl-assignment
 npm i
+```
+
+Development server
+```
 npm run dev
+```
+
+Production build
+```
+npm run build
+npx serve ./build
 ```
 
 ## Solutions
@@ -43,3 +53,7 @@ https://webglfundamentals.org/webgl/lessons/webgl-3d-camera.html
 
 Lighting struct uniform  
 https://webglfundamentals.org/webgl/lessons/webgl-shaders-and-glsl.html
+
+## Walkthough
+
+See [walkthrough.md](./walkthrough.md)
